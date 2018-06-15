@@ -140,9 +140,15 @@ def checkGetChangeSets(tok):
 	data=tok.api.ChangesetsGet(min(float(lon1),float(lon2)),min(float(lat1),float(lat2)),max(float(lon1),float(lon2)),max(float(lat1),float(lat2)),only_closed=True,closed_after=getSetting("lastUpdate"))
 	print(data)
 
+def getMyChangesets(tok):
+	data=tok.api.ChangesetsGet(username="gibeautc")
+	print(data)
+
+
 #Notes area
 # Nodes added that we want to push to main OSM server will not have a changeset
 # If we add nodes just for local use, we will give them a changeset of -1
+# They also will not have a node ID......how are we actully dealing with this
 
 if __name__=="__main__":
 	mainToken=Token()
