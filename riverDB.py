@@ -2,12 +2,6 @@
 
 
 #River OSM Data
-
-#collect/store and update River Related Data. This database should then be able to be handed off to the client, or exported as xml (.osm) document
-#start with small area then expand to PNW
-
-#have bounding box of area, request all data (first time through)
-
 from riverUtils import * 
 from osmapi import OsmApi
 import os
@@ -17,6 +11,10 @@ import sqlite3
 import datetime
 import hashlib
 
+#config tables needs to contain row for bounding box
+#bounding box will be updated once full data set has been pulled for that area
+#lastChangeCheck will contain value for the last time we got a change set for this area, will be updated after init pull as well
+#this way if the database moves from one machine to another, we know what state and when the last changes were taken from
 
 
 class Token():
@@ -49,6 +47,7 @@ def buildDB(full,tok):
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS relations(id bigint,changeset bigint,tags text,version int,user varchar(20),uid int,ts datetime,visible bool,primary key(id))')
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS relLinks(rid bigint,lid bigint,ord int,type varchar(20),role varchar(20),primary key(rid,lid))')
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS myChangeSets(id bigint,commentCount int,primary key(id))')
+	tok.curs.execute('CREATE TABLE IF NOT EXISTS config(name varchar(20),value varchar(50),primary key(id))')
 	tok.db.commit()
 	print("Database Build Complete")
 
