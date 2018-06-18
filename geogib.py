@@ -39,8 +39,44 @@ def doesWayCrossPolygon(way,poly):
 
 def findDistanceOfWay(w,start=None,end=None):
 	#returns the distance in ft of a way. Optional start and end node id's, if not used will return the entires length
-	#also will check if way is closed?
-	pass
+	#if the pairs include start and finish as the same it will calc fine, but its not checking db
+	cordPairs=None
+	if type(w)is list:
+		#we have a list, is it of nodes or pairs of lat/lon
+		if type(w[0]) is list:
+			#we have a pairs of lat lon
+			#we do not need to do anything
+			cordPairs=w
+			pass
+		elif type(w[0]) is dict:
+			#we should have a list of dicts (nodes)
+			pass
+		else:
+			print("unknown type inside list:"+str(type(w[0])))
+			return None
+	elif type(w) is dict:
+		#we have a dict, which will contain a list of nodes, and we would need a database call to get their lat/lon
+		print("Way Dict? No database yet")
+		return
+	else:
+		print("unknown data type of way: "+str(type(w)))
+	if cordPairs is None:
+		print('cordPairs is none....')
+		return
+	total=0
+	if start is not None:
+		s=start
+	else:
+		s=0
+	if end is not None:
+		e=end
+	else:
+		e=len(cordPairs)
+		
+	for x in range(s,e-1):
+		total=total+findDistnace(cordPairs[x],cordPairs[x+1])
+	
+	return total
 	
 	
 def findDistnace(p1,p2):
@@ -107,6 +143,14 @@ def test():
 		print("findDistance(dict): PASS "+str(t))
 	else:
 		print("findDistance(dict): FAIL "+str(t))
+	#---------------Distance(way/pairs)--------------------
+	w=[]
+	w.append([44.617599,-123.073871])#25th and fulton
+	w.append([44.617631,-123.072711])#25th and waverly
+	w.append([44.615771,-123.072643])#27th and waverly
+	w.append([44.615760,-123.073796])#27th and fulton
+	print(findDistanceOfWay(w))
+	
 	
 	
 if __name__=="__main__":
