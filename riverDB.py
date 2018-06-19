@@ -47,7 +47,7 @@ def buildDB(full,tok):
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS relations(id bigint,changeset bigint,tags text,version int,user varchar(20),uid int,ts datetime,visible bool,primary key(id))')
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS relLinks(rid bigint,lid bigint,ord int,type varchar(20),role varchar(20),primary key(rid,lid))')
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS myChangeSets(id bigint,commentCount int,primary key(id))')
-	tok.curs.execute('CREATE TABLE IF NOT EXISTS config(name varchar(20),value varchar(50),primary key(id))')
+	tok.curs.execute('CREATE TABLE IF NOT EXISTS config(name varchar(20),value varchar(50),primary key(name))')
 	tok.db.commit()
 	print("Database Build Complete")
 
@@ -64,8 +64,15 @@ def addNodeDB(n,tok):
 		print(sys.exc_info())
 		
 def addWayDB(n,tok):
-	db_out=[str(n['id']),str(n['tag']),str(n['changeset']),str(n['version']),str(n['user']),str(n['uid']),str(n['timestamp']),str(n['visible'])]
-	q="insert or replace into ways(id,tags,changeset,version,user,uid,ts,visible) values(?,?,?,?,?,?,?,?)"
+	nodes=n['nd']
+	if nodex[0]['id']==nodex[-1]['id']:
+		print("Closed Way")
+		closed=True
+	else:
+		print("Open Way")
+		closed=False
+	db_out=[str(n['id']),str(n['tag']),str(n['changeset']),str(n['version']),str(n['user']),str(n['uid']),str(n['timestamp']),str(n['visible']),str(closed)]
+	q="insert or replace into ways(id,tags,changeset,version,user,uid,ts,visible,closed) values(?,?,?,?,?,?,?,?,?)"
 	try:
 		tok.curs.execute(q,db_out)
 		tok.db.commit()
@@ -355,6 +362,7 @@ def getMyChangeSets(tok):
 if __name__=="__main__":
 	mainToken=Token()
 	buildDB(False,mainToken)
+	getFullMap(mainToken)
 	while True:
 		if getSetting("boundBox")!=getSetting("lastBoundBox"):
 			getFullMap(mainToken)
