@@ -65,7 +65,7 @@ def addNodeDB(n,tok):
 		
 def addWayDB(n,tok):
 	nodes=n['nd']
-	if nodex[0]['id']==nodex[-1]['id']:
+	if nodes[0]==nodes[-1]:
 		print("Closed Way")
 		closed=True
 	else:
@@ -220,11 +220,11 @@ def getFullMap(tok):
 	print("Number of Relations: "+str(len(relations)))
 	 
 	procCnt=0
-	for n in nodes:
-		addNodeDB(n,tok)
-		print("Adding Node:"),
-		print(procCnt/totalCount)
-		procCnt=procCnt+1
+	#for n in nodes:
+	#	addNodeDB(n,tok)
+	#	print("Adding Node:"),
+	#	print(procCnt/totalCount)
+	#	procCnt=procCnt+1
 	for w in ways:
 		print("Adding Way:"),
 		print(procCnt/totalCount)
