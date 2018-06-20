@@ -220,11 +220,11 @@ def getFullMap(tok):
 	print("Number of Relations: "+str(len(relations)))
 	 
 	procCnt=0
-	#for n in nodes:
-	#	addNodeDB(n,tok)
-	#	print("Adding Node:"),
-	#	print(procCnt/totalCount)
-	#	procCnt=procCnt+1
+	for n in nodes:
+		addNodeDB(n,tok)
+		print("Adding Node:"),
+		print(procCnt/totalCount)
+		procCnt=procCnt+1
 	for w in ways:
 		print("Adding Way:"),
 		print(procCnt/totalCount)
@@ -361,7 +361,7 @@ def getMyChangeSets(tok):
 
 if __name__=="__main__":
 	mainToken=Token()
-	buildDB(False,mainToken)
+	buildDB(True,mainToken)
 	getFullMap(mainToken)
 	while True:
 		if getSetting("boundBox")!=getSetting("lastBoundBox"):
