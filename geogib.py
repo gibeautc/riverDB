@@ -4,38 +4,51 @@
 #Library for geometric type functions
 import time
 from math import sin, cos, sqrt, atan2, radians
+import sqlite3
 
+
+
+def openDB():
+	d=sqlite3.connect('river.db')
+	c=d.cursor()
+	return d,c
 
 
 def isPointInPolygon(point,poly):
 	#returns true if point is inside polygon, false if not
+	#poly should be given as list of lat/lon pairs, dont want to deal with database connection in this lib to pull node info
 	try:
 		i=point['id']
 		lat=point['lat']
 		lon=point['lon']
 	except:
 		#we were just given lat/lon pair
-		lat=point[0]
-		lon=point[1]
-	#poly should be given as list of lat/lon pairs, dont want to deal with database connection in this lib to pull node info
+		try:
+			lat=point[0]
+			lon=point[1]
+		except:
+			print("Failed")
+	print("Write ME (isPointInPolygon)")
 	
-	#get bounding box cords(min/max)
-	#check 
 		
 		
 	
 	
 def doLineSegmentsIntersect(l1,l2):
 	#returns the cords for intersection if they do, return None if not
-	pass
+	print("Write ME(doesWayCrossPolygon)")
+	
 	
 	
 def doesWayCrossPolygon(way,poly):
 	#retuns a list of points cords where way(multiple line segments) crosses a polygon (closed way)
 	#used for error checking that a river way falls within a riverbank polygon
 	#Eventually need to upgrade this to a relationship or multiple polygons since a riverbank will rarely be a single way
-	pass
+	print("Write ME(doesWayCrossPolygon)")
+	
 
+def findClosestLineToPoint(p,lineLst):
+	print("Write ME(findClosestLineToPoint)")
 
 def findDistanceOfWay(w,start=None,end=None):
 	#returns the distance in ft of a way. Optional start and end node id's, if not used will return the entires length
@@ -150,8 +163,19 @@ def test():
 	w.append([44.615771,-123.072643])#27th and waverly
 	w.append([44.615760,-123.073796])#27th and fulton
 	print(findDistanceOfWay(w))
+	#---------------isPointInPolgon--------------------
+	isPointInPolygon(None,None)
+	#---------------doLineSegmentsIntersect--------------------
+	doLineSegmentsIntersect(None,None)
+	#---------------doesWayCrossPolygon--------------------
+	doesWayCrossPolygon(None,None)
+	#---------------findClosestLineToPoint--------------------
+	findClosestLineToPoint(None,None)
+
+
 	
 	
 	
+GeoDB,GeoCurs=openDB()
 if __name__=="__main__":
 	test()

@@ -361,8 +361,8 @@ def getMyChangeSets(tok):
 
 if __name__=="__main__":
 	mainToken=Token()
-	buildDB(True,mainToken)
-	getFullMap(mainToken)
+	buildDB(False,mainToken)
+	#getFullMap(mainToken)
 	while True:
 		if getSetting("boundBox")!=getSetting("lastBoundBox"):
 			getFullMap(mainToken)
