@@ -10,12 +10,34 @@ import sys
 import sqlite3
 import datetime
 import hashlib
+import logging as log
 
-#config tables needs to contain row for bounding box
-#bounding box will be updated once full data set has been pulled for that area
-#lastChangeCheck will contain value for the last time we got a change set for this area, will be updated after init pull as well
-#this way if the database moves from one machine to another, we know what state and when the last changes were taken from
 
+
+#need to come up with a method of multitple boxes inside a larger bounding box. as it seams the limit for the api is around .25 (maybe degree?)
+
+
+
+
+def checkSetLogLevel():
+	l=getSetting("loglevel")
+	ll=log.WARNING  #default
+	if l=="DEBUG":
+		ll=log.DEBUG
+	if l=="INFO":
+		ll=log.INFO
+	if l=="WARNING":
+		ll=log.WARNING
+	if l=="ERROR":
+		ll=log.ERROR
+	log.setLevel=ll
+	
+#logging setup
+FORMAT='%(levelname)s %(asctime)s %(threadName)s : %(message)s'
+LOGFILE='/home/chadg/logs/riverDB.log'
+log.basicConfig(format=FORMAT,datefmt='%m-%d-%y %H:%M:%S',filename=LOGFILE,level=log.WARNING)
+checkSetLogLevel()
+log.info('Logging Started')
 
 class Token():
 	def __init__(self):
@@ -33,14 +55,14 @@ def openDB():
 	
 def buildDB(full,tok):
 	if full:
-		print("Deleting Database")
+		log.warning("Deleting Database")
 		time.sleep(1)
 		try:
 			os.remove('river.db')
 		except:
 			pass
 		tok.connectDB()
-	print("Building Database")
+	log.info("Building Database")
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS nodes(id bigint,lat float(8,5),lon float(8,5),changeset bigint,tags text,version int,user varchar(20),uid int,ts datetime,visible bool,primary key(id))')
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS ways(id bigint,changeset,tags text,version int,user varchar(20),uid int,ts datetime,visible bool,closed bool,primary key(id))')
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS links(nid bigint,wid bigint,ord int,primary key(nid,wid))')
@@ -49,7 +71,7 @@ def buildDB(full,tok):
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS myChangeSets(id bigint,commentCount int,primary key(id))')
 	tok.curs.execute('CREATE TABLE IF NOT EXISTS config(name varchar(20),value varchar(50),primary key(name))')
 	tok.db.commit()
-	print("Database Build Complete")
+	log.info("Database Build Complete")
 
 def addNodeDB(n,tok):
 	db_out=[str(n['id']),str(n['lat']),str(n['lon']),str(n['tag']),str(n['changeset']),str(n['version']),str(n['user']),str(n['uid']),str(n['timestamp']),str(n['visible'])]
@@ -57,30 +79,30 @@ def addNodeDB(n,tok):
 	try:
 		tok.curs.execute(q,db_out)
 		tok.db.commit()
-		print("Added Node: "+str(n['id']))
+		log.info("Added Node: "+str(n['id']))
 	except:
 		tok.db.rollback()
-		print("Error Adding Node")
-		print(sys.exc_info())
+		log.error("Error Adding Node")
+		log.error(sys.exc_info())
 		
 def addWayDB(n,tok):
 	nodes=n['nd']
 	if nodes[0]==nodes[-1]:
-		print("Closed Way")
+		log.debug("Closed Way")
 		closed=True
 	else:
-		print("Open Way")
+		log.debug("Open Way")
 		closed=False
 	db_out=[str(n['id']),str(n['tag']),str(n['changeset']),str(n['version']),str(n['user']),str(n['uid']),str(n['timestamp']),str(n['visible']),str(closed)]
 	q="insert or replace into ways(id,tags,changeset,version,user,uid,ts,visible,closed) values(?,?,?,?,?,?,?,?,?)"
 	try:
 		tok.curs.execute(q,db_out)
 		tok.db.commit()
-		print("Added Way: "+str(n['id']))
+		log.info("Added Way: "+str(n['id']))
 	except:
 		tok.db.rollback()
-		print("Error Adding Way")
-		print(sys.exc_info())
+		log.error("Error Adding Way")
+		log.error(sys.exc_info())
 		
 def addRelationDB(r,tok):
 	db_out=[str(r['id']),str(r['tag']),str(r['changeset']),str(r['version']),str(r['user']),str(r['uid']),str(r['timestamp']),str(r['visible'])]
@@ -88,11 +110,11 @@ def addRelationDB(r,tok):
 	try:
 		tok.curs.execute(q,db_out)
 		tok.db.commit()
-		print("Added Relation: "+str(r['id']))
+		log.info("Added Relation: "+str(r['id']))
 	except:
 		tok.db.rollback()
-		print("Error Adding Relation")
-		print(sys.exc_info())
+		log.error("Error Adding Relation")
+		log.error(sys.exc_info())
 
 def addLinkDB(nid,wid,index,tok):
 	db_out=[str(nid),str(wid),str(index)]
@@ -100,11 +122,11 @@ def addLinkDB(nid,wid,index,tok):
 	try:
 		tok.curs.execute(q,db_out)
 		tok.db.commit()
-		print("Added Link: "+str(nid)+" : "+str(wid))
+		log.info("Added Link: "+str(nid)+" : "+str(wid))
 	except:
 		tok.db.rollback()
-		print("Error Adding Link")
-		print(sys.exc_info())
+		log.error("Error Adding Link")
+		log.error(sys.exc_info())
 
 def addRelLinkDB(m,rid,cnt,tok):
 	#relLinks(rid bigint,lid bigint,ord int,type varchar(20),role varchar(20),primary key(rid,lid))')
@@ -121,23 +143,23 @@ def addRelLinkDB(m,rid,cnt,tok):
 	try:
 		tok.curs.execute(q,db_out)
 		tok.db.commit()
-		print("Added Relation Link: "+str(rid))
+		log.info("Added Relation Link: "+str(rid))
 	except:
 		tok.db.rollback()
-		print("Error Adding Link")
-		print(sys.exc_info())
+		log.error("Error Adding Link")
+		log.error(sys.exc_info())
 		
 def removeNodeDB(n,tok):
 	q="delete from nodes where id=?"
 	try:
 		tok.curs.execute(q,[int(n['id']),])
 		tok.db.commit()
-		print("Removed Node: "+str(n['id']))
+		log.info("Removed Node: "+str(n['id']))
 		return True
 	except:
 		tok.db.rollback()
-		print("Error Removing Node")
-		print(sys.exc_info())
+		log.error("Error Removing Node")
+		log.error(sys.exc_info())
 		return False
 		
 def removeWayDB(w,tok):
@@ -145,12 +167,12 @@ def removeWayDB(w,tok):
 	try:
 		tok.curs.execute(q,[int(w['id']),])
 		tok.db.commit()
-		print("Removed Way: "+str(w['id']))
+		log.info("Removed Way: "+str(w['id']))
 		return True
 	except:
 		tok.db.rollback()
-		print("Error Removing Way")
-		print(sys.exc_info())
+		log.error("Error Removing Way")
+		log.error(sys.exc_info())
 		return False
 	q="delete from links where wid=?"
 	try:
@@ -159,8 +181,8 @@ def removeWayDB(w,tok):
 		return True
 	except:
 		tok.db.rollback()
-		print("Error Removing Links")
-		print(sys.exc_info())
+		log.error("Error Removing Links")
+		log.error(sys.exc_info())
 		return False
 	
 	
@@ -170,11 +192,11 @@ def removeRelationDB(r,tok):
 	try:
 		tok.curs.execute(q,[int(r['id']),])
 		tok.db.commit()
-		print("Removed Relation: "+str(r['id']))
+		log.info("Removed Relation: "+str(r['id']))
 	except:
 		tok.db.rollback()
-		print("Error Removing Relation")
-		print(sys.exc_info())
+		log.error("Error Removing Relation")
+		log.error(sys.exc_info())
 		return False
 	q="delete from relLinks where rid=?"
 	try:
@@ -183,8 +205,8 @@ def removeRelationDB(r,tok):
 		return True
 	except:
 		tok.db.rollback()
-		print("Error Removing Relation Links")
-		print(sys.exc_info())
+		log.error("Error Removing Relation Links")
+		log.error(sys.exc_info())
 		return False
 
 def getFullMap(tok):
@@ -196,18 +218,18 @@ def getFullMap(tok):
 	
 	data=tok.api.Map(min(float(lon1),float(lon2)),min(float(lat1),float(lat2)),max(float(lon1),float(lon2)),max(float(lat1),float(lat2)))
 	if data is None or len(data)<1:
-		print("Bad data returned from map function?")
+		log.warning("Bad data returned from map function?")
 		return
 	nodes=[]
 	ways=[]
 	relations=[]
 	totalCount=len(data)
-	print("Returned "+str(totalCount)+" elements")
+	log.info("Returned "+str(totalCount)+" elements")
 	retTime=int(time.mktime(time.gmtime()))
 	procCnt=0
 	for d in data:
-		print("Sorting:"),
-		print(procCnt/totalCount)
+		log.debug("Sorting:"),
+		log.debug(procCnt/totalCount)
 		procCnt=procCnt+1
 		if d['type']=='node':
 			nodes.append(d['data'])
@@ -215,19 +237,19 @@ def getFullMap(tok):
 			ways.append(d['data'])
 		if d['type']=='relation':
 			relations.append(d['data'])
-	print("Number of Nodes: "+str(len(nodes)))
-	print("Number of Ways: "+str(len(ways)))
-	print("Number of Relations: "+str(len(relations)))
+	log.debug("Number of Nodes: "+str(len(nodes)))
+	log.debug("Number of Ways: "+str(len(ways)))
+	log.debug("Number of Relations: "+str(len(relations)))
 	 
 	procCnt=0
 	for n in nodes:
 		addNodeDB(n,tok)
-		print("Adding Node:"),
-		print(procCnt/totalCount)
+		log.info("Adding Node:"),
+		log.debug(procCnt/totalCount)
 		procCnt=procCnt+1
 	for w in ways:
-		print("Adding Way:"),
-		print(procCnt/totalCount)
+		log.info("Adding Way:"),
+		log.debug(procCnt/totalCount)
 		procCnt=procCnt+1
 		cnt=0
 		for n in w['nd']:
@@ -235,8 +257,8 @@ def getFullMap(tok):
 			cnt=cnt+1
 		addWayDB(w,tok)
 	for r in relations:
-		print("Adding Relation:"),
-		print(procCnt/totalCount)
+		log.info("Adding Relation:"),
+		log.debug(procCnt/totalCount)
 		procCnt=procCnt+1
 		addRelationDB(r,tok)
 		cnt=0
@@ -261,8 +283,8 @@ def checkGetChangeSets(tok):
 	except:
 		return
 	for d in data:
-		print("Change Set: "+str(d))
-		print(data[d])
+		log.info("Change Set: "+str(d))
+		log.debug(data[d])
 		changeData=tok.api.ChangesetDownload(d)
 		#changeData is a list of dicts
 		#'type': node|way|relation
@@ -305,7 +327,7 @@ def checkGetChangeSets(tok):
 						addRelLinkDB(m,c['data']['id'],cnt,tok)
 						cnt=cnt+1
 				else:
-					print("Unknown Type for Removal")
+					log.warning("Unknown Type for Removal")
 			elif c['action']=='modify':
 				#updating an element, probably delete it, and readd
 				if c['type']=='way':
@@ -329,9 +351,9 @@ def checkGetChangeSets(tok):
 						addRelLinkDB(m,c['data']['id'],cnt,tok)
 						cnt=cnt+1
 				else:
-					print("Unknown Type for Removal")
+					log.warning("Unknown Type for Removal")
 			else:
-				print("Unknown Action:"+c['action'])
+				log.warning("Unknown Action:"+c['action'])
 		if suc:
 			setSetting("lastUpdate",int(retTime))	
 	#once we process and make these changes, we need to update the lastUpdate setting to mark we are current
@@ -344,16 +366,9 @@ def getMyChangeSets(tok):
 	m.update(str(data).encode('utf-8'))
 	csMd5=str(m.hexdigest())
 	if csMd5!=getSetting("myChangeHash"):
-		for d in data:
-			#print(d)
-			#print(data[d])
-			#print("")
-			print("There are changes to my changesets")
+		log.warning("There are changes to my changesets")
 		setSetting("myChangeHash",str(csMd5))
 	
-
-
-
 #Notes area
 # Nodes added that we want to push to main OSM server will not have a changeset
 # If we add nodes just for local use, we will give them a changeset of -1
@@ -364,6 +379,7 @@ if __name__=="__main__":
 	buildDB(False,mainToken)
 	#getFullMap(mainToken)
 	while True:
+		checkSetLogLevel()
 		if getSetting("boundBox")!=getSetting("lastBoundBox"):
 			getFullMap(mainToken)
 		checkGetChangeSets(mainToken)
